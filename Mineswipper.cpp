@@ -133,6 +133,7 @@ bool bomb_present(position* mines, int randomX, int randomY)
             return false;
     return true;
 }
+position* mine;
 void bomb_position(position*& mines)
 {
     srand(time(0));
@@ -142,7 +143,7 @@ void bomb_position(position*& mines)
         int randomY = rand() % level.side;
         if (bomb_present(mines, randomX, randomY))
         {
-            position* mine = new position[level.count + 1];
+            mine = new position[level.count + 1];
             for (int i = 0; i < level.count; i++)
             {
                 mine[i] = mines[i];
@@ -192,40 +193,12 @@ void set_game(int choice)
 int total_left;
 void print(int ri, int ci, int row, int col, int len, char ch = -37)
 {
-    bool found = true;
-    int temp1, temp2;
+    SetClr(YELLOW, LPURPLE);
     for (int i = 0; i < len; i++)
     {
         gotoRowCol(row + i, col);
         for (int j = 0; j < len; j++)
-        {
-            if (gameover && level.ps[ri][ci].isMine)
-                SetClr(BLACK, LPURPLE);
-            else if (!level.ps[ri][ci].isOpen && !level.ps[ri][ci].Flag)
-                SetClr(YELLOW, LPURPLE);
-            else if (level.ps[ri][ci].isOpen)
-                SetClr(WHITE, LPURPLE);
-            else if (level.ps[ri][ci].Flag)
-                SetClr(RED, LPURPLE);
-            if (!(level.ps[ri][ci].isOpen && level.ps[ri][ci].isNumber))
-                std::cout << ch;
-            else
-            {
-                if (found)
-                {
-                    temp1 = i, temp2 = j;
-                    found = false;
-                }
-                if (i == temp1 + len / 2 && j == temp2 + len / 2)
-                {
-                    SetClr(RED, WHITE);
-                    std::cout << level.ps[ri][ci].val;
-                    found = true;
-                }
-                else
-                    std::cout << ch;
-            }
-        }
+            std::cout << ch;
     }
 }
 void grid(char ch = -37)
@@ -245,75 +218,118 @@ void grid(char ch = -37)
         }
     }
 }
-void flood(int, int);
-void further_flood(position*& pos, int& size, int x, int y)
+void prt(int ri, int ci)
 {
-    if (cordinate_check(x, y) && !level.ps[x][y].isOpen)
-    {
-        level.ps[x][y].isOpen = true;
-        total_left--;
-        if (!level.ps[x][y].isNumber)
+    bool found = true;
+    int temp1, temp2;
+    int len = level.width;
+    char fla = -37;
+    if (gameover && level.ps[ri][ci].isMine)
+        SetClr(BLACK, LPURPLE);
+    else if (!level.ps[ri][ci].isOpen && !level.ps[ri][ci].Flag)
+        SetClr(YELLOW, LPURPLE);
+    else if (level.ps[ri][ci].isOpen)
+        SetClr(WHITE, LPURPLE);
+    else if (level.ps[ri][ci].Flag)
+        SetClr(RED, LPURPLE);
+    gotoRowCol(level.startR + (ri * (level.width + 1)), level.startC + (ci * (level.width + 1)));
+    for (int i = 0; i < level.width; i++)
+        for (int j = 0; j < level.width; j++)
         {
-            position* pos_temp = new position[size + 1];
-            for (int i = 0; i < size; i++)
-            {
-                pos_temp[i].ri = pos[i].ri;
-                pos_temp[i].ci = pos[i].ci;
-            }
-            pos_temp[size].ri = x;
-            pos_temp[size].ci = y;
-            // delete[] pos;
-            pos = pos_temp;
-            size++;
+            gotoRowCol(level.startR + (ri * (level.width + 1)) + i, level.startC + (ci * (level.width + 1)) + j);
+    if(level.ps[ri][ci].isNumber)
+    {
+        if (found)
+        {
+            temp1 = i, temp2 = j;
+            found = false;
         }
+        if (i == temp1 + len / 2 && j == temp2 + len / 2)
+        {
+            SetClr(RED, WHITE);
+            std::cout << level.ps[ri][ci].val;
+            found = true;
+            SetClr(WHITE, LPURPLE);
+        }
+        else
+            std::cout << fla;
     }
-    for (int i = 0; i < size; i++)
-        flood(pos[i].ri, pos[i].ci);
+    else
+        std::cout << fla;
+        }
 }
 void flood(int x, int y)
 {
-    position* pos;
-    int size = 0;
-    if (level.ps[x][y].isMine && !level.ps[x][y].isOpen)
+    if (cordinate_check(x, y) && !level.ps[x][y].isOpen)
     {
-        gameover = true;
-        return;
-    }
-    else if (level.ps[x][y].isNumber)
-    {
-        level.ps[x][y].isOpen = true;
-        total_left--;
-        return;
-    }
-    else
-    {
-        if (!level.ps[x][y].isOpen)
-            total_left--;
-        level.ps[x][y].isOpen = true;
-        further_flood(pos, size, x - 1, y - 1);
-        further_flood(pos, size, x - 1, y);
-        further_flood(pos, size, x - 1, y + 1);
-        further_flood(pos, size, x, y - 1);
-        further_flood(pos, size, x, y + 1);
-        further_flood(pos, size, x + 1, y - 1);
-        further_flood(pos, size, x + 1, y);
-        further_flood(pos, size, x + 1, y + 1);
+        if (!level.ps[x][y].Flag) {
+            if (level.ps[x][y].isMine && !level.ps[x][y].isOpen)
+            {
+                gameover = true;
+                for (int i = 0; i < level.mine; i++)
+                prt(mine[i].ri, mine[i].ci);
+                return;
+            }
+            else if (level.ps[x][y].isNumber)
+            {
+                level.ps[x][y].isOpen = true;
+                total_left--;
+                prt(x, y);
+                return;
+            }
+            else
+            {
+                if (!level.ps[x][y].isOpen)
+                    total_left--;
+                level.ps[x][y].isOpen = true;
+                prt(x, y);
+                flood(x - 1, y - 1);
+                flood(x - 1, y);
+                flood(x - 1, y + 1);
+                flood(x, y - 1);
+                flood(x, y + 1);
+                flood(x + 1, y - 1);
+                flood(x + 1, y);
+                flood(x + 1, y + 1);
+            }
+        }
     }
 }
+
 void flag(int x, int y)
 {
-    level.ps[x][y].Flag = !level.ps[x][y].Flag;
+    char fla = -37;
+    if (!level.ps[x][y].isOpen) {
+        if (level.ps[x][y].Flag)
+            SetClr(YELLOW, LPURPLE);
+        else
+            SetClr(RED, LPURPLE);
+        level.ps[x][y].Flag = !level.ps[x][y].Flag;
+        gotoRowCol(level.startR + (x * (level.width + 1)), level.startC + (y * (level.width + 1)));
+        for (int i = 0; i < level.width; i++)
+            for (int j = 0; j < level.width; j++)
+            {
+                gotoRowCol(level.startR + (x * (level.width + 1)) + i, level.startC + (y * (level.width + 1)) + j);
+                std::cout << fla;
+            }
+    }
 }
+bool printtime = true;
 void getClick()
 {
+    a:
     int x = -1, y = -1, button, a, b;
     do {
         button = getRowColbyAnyClick(x, y);
         a = (x - level.startR) / (level.width + 1);
         b = (y - level.startC) / (level.width + 1);
-    } while (!cordinate_check(a, b));
-    if (!button)
+    } while ((!cordinate_check(a, b))|| level.ps[a][b].isOpen);
+    printtime = false;
+    if (!button) {
+        if (level.ps[a][b].Flag)
+            goto a;
         flood(a, b);
+    }
     else
         flag(a, b);
 }
@@ -451,7 +467,7 @@ void detail_fill()
     file.close();
 }
 int Time;
-void Timee(long long startTime, bool& printtime, bool& stoptime)
+void Timee(long long startTime, bool& stoptime)
 {
     while (!stoptime)
     {
@@ -544,7 +560,6 @@ int main()
         gotoRowCol(0, 0);
         int startTime = time(0);
         bool stoptime = false;
-        bool printtime = true;
         int choice = 0;
         choice = start();
         if (choice >= 0 && choice < 23)
@@ -558,15 +573,15 @@ int main()
         SetClr(WHITE, LPURPLE);
         system("cls");
         grid();
-        std::thread timer(Timee, startTime, std::ref(printtime), std::ref(stoptime));
+        std::thread timer(Timee, startTime, std::ref(stoptime));
         while (!gameover && !win)
         {
             getClick();
-            printtime = false;
             winCheck();
             SetClr(WHITE, LPURPLE);
-            system("cls");
-            grid();
+            // system("cls");
+            //if (!button)
+                //grid();
             printtime = true;
         }
         stoptime = true;
