@@ -39,8 +39,8 @@ This is a **classic Minesweeper game** developed in **C++** as a console-based a
 ---
 
 ## 🚀 Getting Started
-##🎮 How to Play
-#Log in or Sign up:
+## 🎮 How to Play
+# Log in or Sign up:
 
 When you start the game, you will be prompted to log in or sign up to track your progress.
 **Select a Difficulty Level:**
